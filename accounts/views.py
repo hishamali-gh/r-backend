@@ -14,6 +14,29 @@ class RegistrationView(CreateAPIView):
     serializer_class = RegistrationModelSerializer
     permission_classes = [AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'name': user.name,
+                },
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -21,20 +44,20 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data["user"]
+        user = serializer.validated_data['user']
 
         refresh = RefreshToken.for_user(user)
 
         return Response(
             {
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "name": user.name,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'name': user.name,
                 },
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
             },
             status=status.HTTP_200_OK,
         )
