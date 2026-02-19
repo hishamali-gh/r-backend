@@ -13,6 +13,7 @@ class RegistrationView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegistrationModelSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -41,6 +42,7 @@ class RegistrationView(CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
