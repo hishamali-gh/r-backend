@@ -34,7 +34,7 @@ class RegistrationView(CreateAPIView):
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
         )
 
 class LoginView(APIView):
