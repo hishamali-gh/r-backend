@@ -11,20 +11,19 @@ class ProductTypeModelViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
 
 class ProductModelViewSet(ModelViewSet):
-    queryset = Product.objects.all()
     serializer_class = ProductModelSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['category', 'product_type', 'is_available']
-    search_fields = ['name', 'description', 'category__name', 'product_type__name']
+    filterset_fields = ['category', 'product_type', 'is_active']
+    search_fields = ['name', 'description', 'category', 'product_type__name']
     ordering_fields = ['price', 'created_at']
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True)
+        queryset = Product.objects.prefetch_related('images').order_by('-created_at')
 
         if self.request.user.is_staff:
-            return Product.objects.all()
+            return queryset
 
-        return queryset
+        return queryset.filter(is_active=True)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

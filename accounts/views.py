@@ -27,9 +27,11 @@ class RegistrationView(CreateAPIView):
             {
                 'user': {
                     'id': user.id,
+                    'name': user.name,
                     'username': user.username,
                     'email': user.email,
-                    'name': user.name,
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser
                 },
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
@@ -52,9 +54,11 @@ class LoginView(APIView):
             {
                 'user': {
                     'id': user.id,
+                    'name': user.name,
                     'username': user.username,
                     'email': user.email,
-                    'name': user.name,
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser
                 },
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),

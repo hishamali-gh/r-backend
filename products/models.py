@@ -15,9 +15,17 @@ class Product(models.Model):
     product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE, related_name='items')
     description = models.TextField()
     price = models.DecimalField(max_digits=8, decimal_places=2)
-    count = models.PositiveSmallIntegerField()
+    count = models.PositiveSmallIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+    
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    url = models.URLField()
+
+    def __str__(self):
+        return f"{self.product.name}'s image"
