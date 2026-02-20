@@ -10,7 +10,7 @@ class Order(models.Model):
         ('PAID', 'Paid'),
         ('SHIPPING', 'Shipping'),
         ('DELIVERING', 'Delivering'),
-        ('CANCELLING', 'Cancelled')
+        ('CANCELLED', 'Cancelled')
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
