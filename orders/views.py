@@ -17,13 +17,11 @@ class CreateOrderView(APIView):
 
         try:
             cart = Cart.objects.get(user=user)
+
         except Cart.DoesNotExist:
             return Response({"detail": "Cart not found"}, status=400)
 
         cart_items = cart.items.all()
-
-        if not cart_items.exists():
-            return Response({"detail": "Cart is empty"}, status=400)
 
         total_price = 0
 
@@ -31,7 +29,6 @@ class CreateOrderView(APIView):
 
         order = Order.objects.create(
             user=user,
-            total_price=0,
             name=shipping_data.get("name"),
             address=shipping_data.get("address"),
             city=shipping_data.get("city"),
