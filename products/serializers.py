@@ -9,7 +9,8 @@ class ProductTypeModelSerializer(serializers.ModelSerializer):
 class ProductImageModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'url']
+        fields = ['id', 'product', 'url', 'main']
+        read_only_fields = ['product']
 
 class ProductModelSerializer(serializers.ModelSerializer):
     product_type = serializers.CharField(source='product_type.name', read_only=True)
