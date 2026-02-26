@@ -77,9 +77,9 @@ WSGI_APPLICATION = 'willow_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'willow_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Feb14thIsTheWorstDay',
+        'NAME': 'r_db',
+        'USER': 'hisham_ali',
+        'PASSWORD': 'hishamali123',
         'HOST': 'localhost',
         'PORT': '5432'
     }
@@ -123,7 +123,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-# DRF CONFIGS
+# DRF CONFIG
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
@@ -13,7 +13,7 @@ class ProductTypeAPIView(APIView):
         if self.request.method == 'GET':
             return [AllowAny()]
         
-        return [IsAdminUser()]
+        return [IsAuthenticated(), IsAdminUser()]
 
     def get(self, request, pk=None):
         if pk:
@@ -79,7 +79,7 @@ class ProductAPIView(APIView):
         if self.request.method == 'GET':
             return [AllowAny()]
         
-        return [IsAdminUser()]
+        return [IsAuthenticated(), IsAdminUser()]
 
     def get(self, request, pk=None):
         if pk:
@@ -135,7 +135,7 @@ class ProductVariantAPIView(APIView):
         if self.request.method == 'GET':
             return [AllowAny()]
         
-        return [IsAdminUser()]
+        return [IsAuthenticated(), IsAdminUser()]
 
     def get(self, request, pk=None):
         if pk:
@@ -186,6 +186,12 @@ class ProductVariantAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class ProductImageAPIView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        
+        return [IsAuthenticated(), IsAdminUser()]
+
     def get(self, request, product_id=None, image_id=None):
         if not product_id:
             return Response(
