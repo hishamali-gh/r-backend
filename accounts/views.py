@@ -110,3 +110,11 @@ class UserAPIView(APIView):
         user.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class MeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = RegistrationModelSerializer(request.user)
+
+        return Response(serializer.data)

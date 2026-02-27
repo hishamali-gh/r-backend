@@ -66,7 +66,7 @@ class ProductTypeAPIView(APIView):
 class ProductAPIView(APIView):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['name', 'product_type__name', 'description']
-    filterset_fields = ['product_type__name']
+    filterset_fields = ['category', 'product_type__name']
     ordering_fields = ['name', 'price']
 
     def filter_queryset(self, queryset):
