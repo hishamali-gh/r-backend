@@ -3,6 +3,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db import transaction
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
 from rest_framework.generics import ListAPIView
 from .serializers import OrderSerializer
 from .models import Order, OrderItem
@@ -46,6 +48,7 @@ class CreateOrderView(APIView):
             total_price += item.product.price * item.quantity
 
         order.total_price = total_price
+
         order.save()
 
         cart_items.delete()
@@ -64,4 +67,26 @@ class OrderListView(generics.ListAPIView):
     def get_queryset(self):
         if self.request.user.is_staff:
             return Order.objects.all().order_by('-created_at')
+        
         return Order.objects.filter(user=self.request.user).order_by('-created_at')
+    
+class MonthlyRevenueAPIView(APIView):
+    def get(self, request):
+        successful_orders = (
+            Order.objects.filter(status='DELIVERED')
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(revenue=Sum('total_price'))
+            .order_by('month')
+        )
+
+        chart_data = [
+            {
+                "month": item['month'].strftime('%b %Y'), 
+                "revenue": float(item['revenue'] or 0)
+            }
+            
+            for item in successful_orders
+        ]
+    
+        return Response(chart_data)
