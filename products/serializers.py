@@ -1,10 +1,29 @@
 from rest_framework import serializers
-from .models import ProductType, ProductImage, Product, ProductVariant
+from .models import ProductType, ProductImage, Product, ProductVariant, SizeOption
+
 
 class ProductTypeModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductType
         fields = ['id', 'name']
+
+
+class SizeOptionSerializer(serializers.ModelSerializer):
+    product_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductType.objects.all(),
+        source='product_type',
+        write_only=True
+    )
+
+    product_type = serializers.CharField(
+        source='product_type.name',
+        read_only=True
+    )
+
+    class Meta:
+        model = SizeOption
+        fields = ['id', 'value', 'product_type', 'product_type_id']
+
 
 class ProductImageModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,12 +31,62 @@ class ProductImageModelSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'url', 'main']
         read_only_fields = ['product']
 
+
+class ProductVariantModelSerializer(serializers.ModelSerializer):
+    size = SizeOptionSerializer(read_only=True)
+
+    size_id = serializers.PrimaryKeyRelatedField(
+        queryset=SizeOption.objects.all(),
+        source='size',
+        write_only=True
+    )
+
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
+
+    final_price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+
+    class Meta:
+        model = ProductVariant
+        fields = [
+            'id',
+            'product_id',
+            'size',
+            'size_id',
+            'stock',
+            'price',
+            'final_price'
+        ]
+
+    def validate(self, data):
+        product = data.get('product') or getattr(self.instance, 'product', None)
+        size = data.get('size') or getattr(self.instance, 'size', None)
+
+        if product and size:
+            if size.product_type != product.product_type:
+                raise serializers.ValidationError(
+                    "Size does not match product type"
+                )
+
+        return data
+
+
 class ProductModelSerializer(serializers.ModelSerializer):
     product_type = serializers.CharField(source='product_type.name')
     main_image = serializers.SerializerMethodField()
     image = serializers.URLField(write_only=True, required=False)
 
     images = ProductImageModelSerializer(many=True, read_only=True)
+    variants = ProductVariantModelSerializer(many=True, read_only=True)
+
+    available_sizes = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -30,6 +99,8 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'price',
             'main_image',
             'images',
+            'variants',
+            'available_sizes',
             'image',
             'is_active',
             'created_at',
@@ -39,7 +110,13 @@ class ProductModelSerializer(serializers.ModelSerializer):
     def get_main_image(self, obj):
         main = obj.images.filter(main=True).first()
         return main.url if main else None
-    
+
+    def get_available_sizes(self, obj):
+        return SizeOptionSerializer(
+            obj.product_type.sizes.all(),
+            many=True
+        ).data
+
     def create(self, validated_data):
         image_url = validated_data.pop('image', None)
         type_name = validated_data.pop('product_type')['name']
@@ -59,7 +136,7 @@ class ProductModelSerializer(serializers.ModelSerializer):
             )
 
         return product
-    
+
     def update(self, instance, validated_data):
         image_url = validated_data.pop('image', None)
 
@@ -81,16 +158,3 @@ class ProductModelSerializer(serializers.ModelSerializer):
             )
 
         return instance
-
-class ProductVariantModelSerializer(serializers.ModelSerializer):
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(),
-        source='product',
-        write_only=True
-    )
-
-    product = ProductModelSerializer(read_only=True)
-
-    class Meta:
-        model = ProductVariant
-        fields = ['id', 'product', 'product_id', 'size', 'stock']

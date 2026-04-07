@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from products.models import Product
+from products.models import ProductVariant
 
 User = get_user_model()
 
@@ -12,19 +12,26 @@ class Cart(models.Model):
     def __str__(self):
         return f"{self.user.username}'s cart"
     
+from products.models import ProductVariant
+
+
 class CartItem(models.Model):
-    SIZE_CHOICES = (
-        ('XS', 'XS'),
-        ('S', 'S'),
-        ('M', 'M'),
-        ('L', 'L'),
-        ('XL', 'XL'),
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name='items'
     )
 
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items')
-    size = models.CharField(max_length=2, choices=SIZE_CHOICES)
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.CASCADE,
+        related_name='cart_items'
+    )
+
     quantity = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
-        unique_together = ('cart', 'product', 'size')
+        unique_together = ('cart', 'variant')
+
+    def __str__(self):
+        return f"{self.variant} x {self.quantity}"

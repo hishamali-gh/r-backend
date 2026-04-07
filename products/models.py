@@ -1,7 +1,13 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+
 
 class ProductType(models.Model):
     name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Product(models.Model):
     CATEGORY_CHOICES = (
@@ -12,31 +18,79 @@ class Product(models.Model):
 
     name = models.CharField(max_length=150)
     category = models.CharField(max_length=5, choices=CATEGORY_CHOICES)
-    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE, related_name='items')
+    product_type = models.ForeignKey(
+        ProductType,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
     description = models.TextField()
-    price = models.DecimalField(max_digits=8, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['-created_at']
-    
+
+
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
     url = models.URLField()
     main = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product.name}'s image"
 
+
+class SizeOption(models.Model):
+    product_type = models.ForeignKey(
+        ProductType,
+        on_delete=models.CASCADE,
+        related_name='sizes'
+    )
+    value = models.CharField(max_length=20)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['product_type', 'value'],
+                name='unique_product_type_value'
+            )
+        ]
+        ordering = ['value']
+
+    def __str__(self):
+        return f"{self.product_type.name} - {self.value}"
+
+
 class ProductVariant(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
-    size = models.CharField(max_length=5)
-    stock = models.PositiveSmallIntegerField(default=0)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='variants'
+    )
+
+    size = models.ForeignKey(
+        SizeOption,
+        on_delete=models.CASCADE,
+        related_name='variants'
+    )
+
+    stock = models.PositiveIntegerField(default=0)
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
 
     class Meta:
         constraints = [
@@ -46,5 +100,17 @@ class ProductVariant(models.Model):
             )
         ]
 
+    @property
+    def final_price(self):
+        return self.price if self.price else self.product.price
+
+    def clean(self):
+        if self.size.product_type != self.product.product_type:
+            raise ValidationError("Size does not match product type")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.product.name} - {self.size}"
+        return f"{self.product.name} - {self.size.value}"
