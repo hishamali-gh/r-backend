@@ -29,6 +29,30 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            has_stock = self.variants.filter(stock__gt=0).exists()
+
+            if not has_stock and self.is_active:
+                raise ValidationError("Cannot activate product without stock")
+
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+
+        if is_new:
+            sizes = self.product_type.sizes.all()
+
+            if not sizes.exists():
+                raise ValidationError("No sizes defined for this product type")
+
+            for size in sizes:
+                ProductVariant.objects.get_or_create(
+                    product=self,
+                    size=size,
+                    stock=0
+                )
+
     def __str__(self):
         return self.name
 
@@ -111,6 +135,20 @@ class ProductVariant(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
+        product = self.product
+
+        has_stock = product.variants.filter(stock__gt=0).exists()
+
+        if not has_stock:
+            if product.is_active:
+                product.is_active = False
+                product.save(update_fields=['is_active'])
+
+        else:
+            if not product.is_active:
+                product.is_active = True
+                product.save(update_fields=['is_active'])
 
     def __str__(self):
         return f"{self.product.name} - {self.size.value}"

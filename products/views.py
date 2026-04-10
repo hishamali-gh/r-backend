@@ -78,9 +78,7 @@ class ProductAPIView(APIView):
             'images',
             'variants__size',
             'product_type__sizes'
-        ).filter(
-            variants__stock__gt=0
-        ).distinct()
+        )
 
     def get(self, request, pk=None):
         if pk:
@@ -174,7 +172,7 @@ class ProductVariantAPIView(APIView):
         product_variant = get_object_or_404(ProductVariant, pk=pk)
         serializer = ProductVariantModelSerializer(product_variant, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save()        
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk=None):
